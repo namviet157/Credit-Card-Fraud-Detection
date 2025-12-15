@@ -271,10 +271,14 @@ Mặc dù dataset không có missing values, nhưng đã implement các phương
 **d) Train-Test Split**:
 
 - Chia dữ liệu theo tỷ lệ 80% train, 20% test
-- Sử dụng `np.random.shuffle()` để xáo trộn indices
+- Sử dụng `np.random.shuffle()` với `random_state=42` để xáo trộn indices
+- **Kích thước tập dữ liệu**:
+  - Train: **227,846** mẫu (Normal: 227,452, Fraud: 394)
+  - Test: **56,961** mẫu (Normal: 56,863, Fraud: 98)
 - **Bảo toàn class distribution**: 
   - Train: 99.83% Normal, 0.17% Fraud
   - Test: 99.83% Normal, 0.17% Fraud
+  - Imbalance ratio được bảo toàn (~0.0017)
 
 ### 3.2. Thuật toán sử dụng
 
@@ -447,23 +451,25 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 ```
 
 **Notebook này sẽ thực hiện**:
-1. Load dataset từ `data/raw/creditcard.csv`
-2. Kiểm tra missing values và thống kê cơ bản
-3. Phân tích class distribution
+1. Load dataset từ `data/raw/creditcard.csv` (284,807 giao dịch, 31 cột)
+2. Kiểm tra missing values (kết quả: 0 missing values) và thống kê cơ bản
+3. Phân tích class distribution (99.83% Normal, 0.17% Fraud)
 4. Phân tích các features quan trọng:
-   - Time feature: Phân tích theo chu kỳ ngày/đêm
-   - Amount feature: So sánh giữa Normal và Fraud
+   - Time feature: Fraud rate cao nhất lúc 2h sáng (~1.71%)
+   - Amount feature: So sánh giữa Normal và Fraud (Skewness = 16.98)
    - PCA features (V1-V28): Phân tích phân phối
 5. Correlation analysis giữa các features
-6. So sánh features giữa Normal và Fraud transactions
-7. Feature engineering: Tạo rolling statistics
-8. Statistical hypothesis testing (T-test)
-9. Xử lý missing values (demo các phương pháp)
-10. Lưu dữ liệu đã xử lý vào `data/processed/`
+6. So sánh features giữa Normal và Fraud - Top features: V3, V14, V17, V12, V10
+7. Feature engineering: Tạo rolling statistics (window=100)
+8. Statistical hypothesis testing (T-test): p-value = 0.0034
+9. Xử lý missing values (demo các phương pháp: Mean, Median, Regression)
 
 **Kết quả đầu ra**:
-- File `header.npy`: Tên các features
-- File `X_regression_filled.npy`: Dữ liệu đã xử lý missing values
+- Insights quan trọng về dữ liệu:
+  - Class imbalance: 99.83% Normal, 0.17% Fraud
+  - Fraud rate cao nhất lúc 2h sáng (~1.71%)
+  - Top features quan trọng: V3, V14, V17, V12, V10
+  - T-test: p-value = 0.0034 → Sự khác biệt Amount có ý nghĩa thống kê
 
 #### 5.1.2. Data Preprocessing
 
@@ -473,26 +479,25 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 ```
 
 **Notebook này sẽ thực hiện**:
-1. Load dữ liệu đã xử lý từ notebook 01
+1. Load dữ liệu từ `data/raw/creditcard.csv`
 2. **Outlier Detection**:
-   - IQR Method
-   - Z-score Method
-   - So sánh và phân tích kết quả
+   - IQR Method: 370,372 outliers (4.33%)
+   - Z-score Method: 83,598 outliers (0.98%)
+   - Quyết định: KHÔNG loại bỏ outliers (có thể là fraud)
 3. **Normalization & Standardization**:
-   - Min-Max Normalization
-   - Z-score Standardization
-   - Log Transformation
-   - Decimal Scaling
-   - So sánh các phương pháp
+   - Min-Max Normalization: Bị ảnh hưởng bởi outliers
+   - Z-score Standardization: Mean=0, Std=1
+   - Log Transformation: Skewness giảm từ 16.98 xuống 0.16
+   - Decimal Scaling: So sánh với các phương pháp khác
 4. **Áp dụng preprocessing cuối cùng**:
    - Log transform cho Amount
    - Z-score standardization cho tất cả features
 5. **Train-Test Split**:
-   - Chia 80% train, 20% test
-   - Bảo toàn class distribution
+   - Chia 80% train, 20% test với `random_state=42`
+   - Train: 227,846 mẫu (Normal: 227,452, Fraud: 394)
+   - Test: 56,961 mẫu (Normal: 56,863, Fraud: 98)
+   - Bảo toàn class distribution (~0.17% Fraud trong cả hai tập)
 6. Lưu dữ liệu đã xử lý:
-   - `X_processed.npy`: Dữ liệu đã chuẩn hóa
-   - `y.npy`: Labels
    - `X_train.npy`, `X_test.npy`: Train/test features
    - `y_train.npy`, `y_test.npy`: Train/test labels
 
@@ -514,27 +519,27 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
    - ROC Curve và AUC
 3. **Implement Logistic Regression**:
    - Class LogisticRegression với Gradient Descent
-   - Training với các hyperparameters
+   - Training với các hyperparameters (lr=0.01, max_iter=1000)
    - Visualize training loss history
-4. **Evaluation**:
-   - Dự đoán trên test set
-   - Tính các metrics
+4. **Evaluation và Threshold Optimization**:
+   - Dự đoán trên test set với threshold mặc định (0.5)
+   - **Thử nghiệm với threshold = 0.2** để cải thiện Recall
+   - Tính các metrics cho cả hai threshold
    - Vẽ Confusion Matrix
    - Vẽ ROC Curve và tính AUC
 5. **Phân tích kết quả**:
-   - Phân tích quantitative metrics
+   - So sánh metrics giữa threshold 0.5 và 0.2
    - Phân tích Confusion Matrix
    - Phân tích ROC Curve và AUC
 
 **Kết quả đầu ra**:
-- Các biểu đồ visualization
-- Metrics trên test set
-- Phân tích và đánh giá mô hình
+- **Threshold 0.5**: Precision=0.8333, Recall=0.4592, F1=0.5921
+- **Threshold 0.2**: Precision=0.8041, Recall=0.7959, F1=0.8000
+- AUC = 0.9748
 
 ### 5.2. Lưu ý quan trọng
 
  **Thứ tự chạy**: Phải chạy theo thứ tự 01 → 02 → 03 vì:
-- Notebook 02 phụ thuộc vào output của notebook 01
 - Notebook 03 phụ thuộc vào output của notebook 02
 
  **Dataset**: Đảm bảo file `creditcard.csv` đã được đặt trong `data/raw/` trước khi chạy
@@ -559,7 +564,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - Final training loss: **0.1095**
 - Training loss giảm đều và mượt mà, không có dấu hiệu overfitting
 
-**Test Results**:
+**Test Results (Threshold = 0.5)**:
 
 | Metric | Value | Giải thích |
 |--------|-------|------------|
@@ -569,24 +574,34 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 | **F1-Score** | 0.5921 | Trung bình - Bị kéo xuống do Recall thấp |
 | **AUC** | **0.9748** | Rất cao - Mô hình có khả năng phân loại tốt |
 
-**Confusion Matrix**:
+**Test Results (Threshold = 0.2 - Tối ưu)**:
+
+| Metric | Value | Giải thích |
+|--------|-------|------------|
+| **Accuracy** | 0.9993 | Duy trì ở mức cực cao |
+| **Precision** | 0.8041 | Tốt - Giảm nhẹ nhưng vẫn chấp nhận được |
+| **Recall** | **0.7959** | Cải thiện đột phá - Phát hiện được ~80% vụ gian lận |
+| **F1-Score** | **0.8000** | Tốt - Cân bằng tốt giữa Precision và Recall |
+| **AUC** | **0.9748** | Rất cao - Mô hình có khả năng phân loại tốt |
+
+**Confusion Matrix (Threshold = 0.2)**:
 
 |                | Predicted Normal | Predicted Fraud |
 |----------------|------------------|-----------------|
-| **Actual Normal** | 56,854 (TN) | 9 (FP) |
-| **Actual Fraud**  | 53 (FN) | 45 (TP) |
+| **Actual Normal** | 56,844 (TN) | 19 (FP) |
+| **Actual Fraud**  | 20 (FN) | 78 (TP) |
 
 **Phân tích**:
--  **True Negatives (56,854)**: Đa số giao dịch bình thường được phân loại đúng
--  **True Positives (45)**: Phát hiện được 45/98 vụ gian lận (45.92%)
--  **False Positives (9)**: Chỉ có 9 cảnh báo giả - Precision cao
--  **False Negatives (53)**: **53 vụ gian lận bị bỏ sót** - Đây là vấn đề lớn nhất
+-  **True Negatives (56,844)**: Đa số giao dịch bình thường được phân loại đúng
+-  **True Positives (78)**: Phát hiện được 78/98 vụ gian lận (79.59%)
+-  **False Positives (19)**: Chỉ có 19 cảnh báo giả - Tỷ lệ rất thấp
+-  **False Negatives (20)**: 20 vụ gian lận bị bỏ sót - Giảm đáng kể so với threshold 0.5
 
 **Nhận định**:
-- Mô hình đang **thiên về Precision** (an toàn quá mức)
-- **Recall thấp** là vấn đề nghiêm trọng trong bài toán fraud detection
-- Tuy nhiên, **AUC cao (0.9748)** chứng tỏ mô hình có khả năng phân loại tốt
-- Vấn đề nằm ở **threshold quá cao (0.5)** - có thể hạ xuống để tăng Recall
+- Việc hạ threshold từ 0.5 xuống 0.2 mang lại **cải thiện đột phá**
+- **Recall tăng từ 45.92% lên 79.59%** - Bắt được thêm rất nhiều vụ gian lận
+- **F1-Score tăng từ 0.5921 lên 0.8000** - Cân bằng tốt hơn hẳn
+- Sự đánh đổi hiệu quả: Chỉ làm phiền thêm 10 khách hàng vô tội để bắt được thêm 33 vụ gian lận
 
 ### 6.2. Hình ảnh trực quan hóa kết quả
 
@@ -771,20 +786,20 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ![](images/confusion_matrix.png)
 
-**Biểu đồ**: Heatmap trực quan hóa số lượng TP, TN, FP, FN
+**Biểu đồ**: Heatmap trực quan hóa số lượng TP, TN, FP, FN (với Threshold = 0.2)
 
 **Giải thích**:
-- **True Negatives (56,854)**: Đa số các giao dịch bình thường được phân loại đúng
-- **False Positives (9)**: Số lượng báo động giả thấp (tương ứng với Precision cao)
-  - Ý nghĩa: Chỉ có 9 khách hàng bị làm phiền hoặc bị khóa thẻ oan. Con số này rất thấp, cho thấy mô hình có Precision (Độ chính xác) cao.
-- **False Negatives (53)**: Số lượng giao dịch gian lận bị bỏ sót (mô hình dự đoán là 0 nhưng thực tế là 1)
-  - Ý nghĩa: Đây là con số nguy hiểm nhất trong bài toán này. Mô hình đã bỏ sót 53 vụ gian lận, gây thất thoát tài chính trực tiếp cho ngân hàng/công ty.
-- **True Positives (45)**: Số lượng gian lận bắt được (45/98 = 45.92%)
+- **True Negatives (56,844)**: Đa số các giao dịch bình thường được phân loại đúng
+- **False Positives (19)**: Số lượng báo động giả thấp
+  - Ý nghĩa: Chỉ có 19 khách hàng bị làm phiền hoặc bị khóa thẻ oan. Tỷ lệ cực kỳ thấp và hoàn toàn chấp nhận được trong vận hành thực tế.
+- **False Negatives (20)**: Số lượng giao dịch gian lận bị bỏ sót
+  - Ý nghĩa: Có 20 vụ gian lận bị bỏ lọt, gây thiệt hại tài chính. Tuy nhiên, con số này đã giảm đáng kể so với threshold 0.5 (lúc đó >53 vụ bị bỏ sót).
+- **True Positives (78)**: Số lượng gian lận bắt được (78/98 = 79.59%)
 
 **Nhận định**:
-- Mô hình đang **thiên về Precision** (an toàn quá mức)
-- **Recall thấp** là vấn đề nghiêm trọng trong bài toán fraud detection
-- Cần điều chỉnh threshold để cân bằng Precision và Recall
+- Sự đánh đổi hiệu quả: **FP (19) ≈ FN (20)** cho thấy việc hạ threshold xuống 0.2 là quyết định hợp lý
+- Mô hình Logistic Regression đơn giản nhưng phân tách được phần lớn (78/98) các giao dịch gian lận
+- Các đặc trưng PCA (V1-V28) có chất lượng cao và tính phân loại tốt
 
 **3. ROC Curve**
 
@@ -799,43 +814,48 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
   - Chứng tỏ mô hình có khả năng phân biệt tốt giữa Normal và Fraud
 
 - **Kết luận quan trọng**:
-  - Mặc dù **Recall** hiện tại thấp (ở threshold 0.5), nhưng **AUC cao** chứng tỏ mô hình *có khả năng* phân loại tốt
-  - Vấn đề nằm ở **ngưỡng quyết định (Decision Threshold)**
+  - **AUC cao** là lý do chúng ta có thể tune threshold để cải thiện Recall
+  - Việc hạ threshold từ 0.5 xuống 0.2 đã được thực hiện và mang lại kết quả tốt
 
-- **Đề xuất cải thiện**:
-  - Thay vì dùng ngưỡng mặc định $0.5$ (nếu xác suất $>0.5$ thì là Fraud), có thể **hạ ngưỡng xuống** (ví dụ: $0.2$)
-  - Việc này sẽ giúp tăng **Recall** (bắt được nhiều gian lận hơn)
-  - Đổi lại **Precision** sẽ giảm (chấp nhận làm phiền khách hàng một chút để không bỏ lọt tội phạm)
+- **Kết quả sau khi tối ưu threshold**:
+  - Hạ ngưỡng từ $0.5$ xuống $0.2$ đã giúp:
+    - **Recall tăng từ 45.92% lên 79.59%** (bắt được thêm 33 vụ gian lận)
+    - **Precision chỉ giảm nhẹ từ 83.33% xuống 80.41%** (thêm 10 cảnh báo giả)
+    - **F1-Score tăng từ 0.5921 lên 0.8000** (cân bằng tốt hơn hẳn)
 
 ### 6.3. So sánh và phân tích
 
-#### 6.3.1. Điểm mạnh của mô hình
+#### 6.3.1. Điểm mạnh của mô hình (với Threshold = 0.2)
 
 1. **AUC Score cao (0.9748)**:
    - Chứng tỏ mô hình có khả năng phân biệt tốt giữa Normal và Fraud
    - Top 5% trong các mô hình fraud detection
 
-2. **Precision cao (0.8333)**:
-   - Giảm thiểu False Positives
-   - Không làm phiền khách hàng bằng cảnh báo giả
+2. **Recall cao (0.7959)**:
+   - Phát hiện được gần 80% tổng số gian lận
+   - Cải thiện đột phá so với threshold mặc định 0.5
 
-3. **Training ổn định**:
+3. **F1-Score cân bằng (0.8000)**:
+   - Cân bằng tốt giữa Precision và Recall
+   - Phù hợp cho bài toán fraud detection
+
+4. **Training ổn định**:
    - Loss giảm đều, không có dấu hiệu overfitting
    - Gradient Descent hoạt động tốt
 
-#### 6.3.2. Điểm yếu và vấn đề
+#### 6.3.2. Điểm yếu và hạn chế
 
-1. **Recall thấp (0.4592)**:
-   - Chỉ phát hiện được 45.92% tổng số gian lận
-   - **53 vụ gian lận bị bỏ sót** - gây thiệt hại tài chính
+1. **Vẫn còn bỏ sót 20 vụ gian lận**:
+   - Recall chưa đạt 100%, vẫn có rủi ro thiệt hại tài chính
+   - Cần cân nhắc kết hợp với các mô hình khác
 
-2. **Threshold quá cao**:
-   - Threshold mặc định 0.5 có thể không phù hợp
-   - Cần tune threshold để cân bằng Precision và Recall
+2. **False Positives (19 cảnh báo giả)**:
+   - Làm phiền một số ít khách hàng vô tội
+   - Đây là sự đánh đổi cần thiết để tăng Recall
 
 3. **Class imbalance**:
-   - Mô hình thiên về class đa số (Normal)
-   - Cần xử lý class imbalance tốt hơn
+   - Dữ liệu mất cân bằng nghiêm trọng (0.17% Fraud)
+   - Có thể cải thiện thêm bằng SMOTE hoặc Class Weights
 
 #### 6.3.3. So sánh với Baseline
 
@@ -845,31 +865,35 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - Recall: 0.0 (không phát hiện được fraud nào)
 - F1-Score: 0.0
 
-**Mô hình Logistic Regression**:
-- Accuracy: 0.9989 (+0.0006)
-- Precision: 0.8333 (tốt)
-- Recall: 0.4592 (tốt hơn baseline rất nhiều)
-- F1-Score: 0.5921 (tốt)
+**Mô hình Logistic Regression (Threshold = 0.2)**:
+- Accuracy: 0.9993 (+0.0010)
+- Precision: 0.8041 (tốt)
+- Recall: 0.7959 (cải thiện đột phá)
+- F1-Score: 0.8000 (tốt)
 
-**Kết luận**: Mô hình tốt hơn baseline đáng kể, đặc biệt là có thể phát hiện được fraud.
+**Kết luận**: Mô hình tốt hơn baseline đáng kể, phát hiện được gần 80% vụ gian lận với độ chính xác cao.
 
 #### 6.3.4. Insights quan trọng
 
 1. **PCA Features quan trọng**:
-   - V3, V14, V17, V12, V10 là những features quan trọng nhất
-   - Có sự khác biệt lớn giữa Normal và Fraud
+   - V3, V14, V17, V12, V10, V7, V1 là những features quan trọng nhất
+   - Có sự khác biệt lớn giữa Normal và Fraud (V3: diff = 7.05, V14: diff = 6.98)
 
 2. **Time pattern**:
-   - Fraud rate cao hơn vào ban đêm (2-4h sáng)
-   - Có thể sử dụng làm feature engineering
+   - Fraud rate cao nhất vào ban đêm: **2h sáng** (tỷ lệ ~1.71%)
+   - Fraud rate thấp nhất vào ban ngày: **10h sáng** (tỷ lệ ~0.05%)
+   - Mối quan hệ nghịch: Khi transaction volume giảm, fraud rate tăng
 
 3. **Amount distribution**:
-   - Fraud có mean cao hơn nhưng median thấp hơn
-   - Cần log transformation để xử lý skewness
+   - Fraud có mean cao hơn ($122.21 vs $88.29) nhưng median thấp hơn ($9.25 vs $22.00)
+   - Log transformation giảm skewness từ 16.98 xuống 0.16
+   - T-test: p-value = 0.0034 < 0.05 → Sự khác biệt có ý nghĩa thống kê
 
-4. **Threshold optimization**:
-   - AUC cao chứng tỏ có thể tune threshold để cải thiện Recall
-   - Trade-off giữa Precision và Recall
+4. **Threshold optimization đã thực hiện**:
+   - Hạ threshold từ 0.5 xuống 0.2 mang lại cải thiện đột phá
+   - Recall tăng từ 45.92% lên 79.59%
+   - F1-Score tăng từ 0.5921 lên 0.8000
+   - Đây là trade-off hiệu quả: Chỉ thêm 10 FP để bắt thêm 33 TP
 
 ---
 
@@ -884,15 +908,8 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 │   ├── raw/                           # Dữ liệu gốc
 │   │   └── creditcard.csv             # Dataset gốc từ Kaggle
 │   └── processed/                     # Dữ liệu đã xử lý
-│       ├── header.npy                 # Tên các features
-│       ├── X_mean_filled.npy          # Dữ liệu điền bằng mean
-│       ├── X_median_filled.npy        # Dữ liệu điền bằng median
-│       ├── X_regression_filled.npy    # Dữ liệu điền bằng regression
-│       ├── X_specific_filled.npy       # Dữ liệu điền bằng giá trị cụ thể
-│       ├── X_processed.npy            # Dữ liệu đã chuẩn hóa (log + z-score)
-│       ├── y.npy                      # Labels
-│       ├── X_train.npy                # Features tập train
-│       ├── X_test.npy                 # Features tập test
+│       ├── X_train.npy                # Features tập train (227,846 mẫu)
+│       ├── X_test.npy                 # Features tập test (56,961 mẫu)
 │       ├── y_train.npy                # Labels tập train
 │       └── y_test.npy                 # Labels tập test
 │
@@ -911,12 +928,10 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 #### `data/processed/`
 - **Chức năng**: Chứa dữ liệu đã được xử lý qua các bước preprocessing
 - **Files**:
-  - `header.npy`: Lưu tên các features (dùng `np.save` với `allow_pickle=True`)
-  - `X_*_filled.npy`: Các phiên bản dữ liệu với các phương pháp điền missing values khác nhau (demo)
-  - `X_processed.npy`: Dữ liệu đã được log transform và z-score standardization
-  - `y.npy`: Vector labels (0 hoặc 1)
-  - `X_train.npy`, `X_test.npy`: Features đã được chia train/test
-  - `y_train.npy`, `y_test.npy`: Labels đã được chia train/test
+  - `X_train.npy`: Features tập train (227,846 mẫu, 30 features)
+  - `X_test.npy`: Features tập test (56,961 mẫu, 30 features)
+  - `y_train.npy`: Labels tập train (0 = Normal, 1 = Fraud)
+  - `y_test.npy`: Labels tập test
 
 #### `notebooks/01_data_exploration.ipynb`
 - **Chức năng**: Khám phá và phân tích dữ liệu ban đầu
@@ -954,10 +969,11 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
   3. Implement Logistic Regression class từ đầu
   4. Training mô hình với Gradient Descent
   5. Visualize training loss history
-  6. Evaluation trên test set
-  7. Vẽ Confusion Matrix
-  8. Vẽ ROC Curve và tính AUC
-  9. Phân tích và đánh giá kết quả
+  6. Evaluation trên test set với threshold mặc định (0.5)
+  7. **Threshold optimization**: Thử nghiệm với threshold = 0.2
+  8. Vẽ Confusion Matrix
+  9. Vẽ ROC Curve và tính AUC
+  10. Phân tích và đánh giá kết quả
 
 #### `requirements.txt`
 - **Chức năng**: Liệt kê các thư viện Python cần thiết
@@ -1063,15 +1079,6 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ### 9.1. Xử lý Class Imbalance
 
-**Class Weighting**
-
-**Ý tưởng**: Tăng trọng số cho class thiểu số trong loss function
-
-- Tính class weights dựa trên tỷ lệ nghịch với số lượng mẫu của mỗi class
-- Áp dụng weights vào Binary Cross-Entropy Loss để mô hình chú ý nhiều hơn đến class thiểu số (Fraud)
-
-**Lợi ích**: Mô hình sẽ chú ý nhiều hơn đến class thiểu số, giúp cải thiện Recall
-
 **SMOTE (Synthetic Minority Oversampling Technique)**
 
 **Ý tưởng**: Tạo các mẫu synthetic cho class thiểu số
@@ -1088,21 +1095,6 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ### 9.2. Model Improvements
 
-**Threshold Optimization**
-
-**Ý tưởng**: Tìm threshold tối ưu để cân bằng Precision và Recall
-
-- Sử dụng Precision-Recall Curve để tìm threshold tốt nhất
-- Có thể sử dụng F1-Score hoặc F-beta Score để tối ưu hóa
-
-**Feature Engineering**
-
-**Ý tưởng**: Tạo thêm các features mới từ dữ liệu hiện có
-
-- Tạo features tương tác giữa các features quan trọng
-- Sử dụng Time feature để tạo features theo chu kỳ (hour of day, day of week)
-- Tạo rolling statistics cho các features khác ngoài Amount
-
 **Ensemble Methods**
 
 **Ý tưởng**: Kết hợp nhiều mô hình để cải thiện hiệu suất
@@ -1110,31 +1102,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - Có thể kết hợp Logistic Regression với các mô hình khác (nếu được phép sử dụng thư viện)
 - Voting hoặc Stacking để tận dụng điểm mạnh của từng mô hình
 
-**Regularization**
-
-**Ý tưởng**: Thêm L1 hoặc L2 regularization để tránh overfitting
-
-- L1 regularization (Lasso) giúp feature selection
-- L2 regularization (Ridge) giúp giảm overfitting
-
-### 9.3. Evaluation Improvements
-
-**Cross-Validation**
-
-**Ý tưởng**: Sử dụng k-fold cross-validation để đánh giá mô hình tốt hơn
-
-- Chia dữ liệu thành k folds
-- Train trên k-1 folds và validate trên 1 fold còn lại
-- Lặp lại k lần và lấy trung bình kết quả
-
-**More Metrics**
-
-**Ý tưởng**: Sử dụng thêm các metrics khác cho imbalanced data
-
-- AUPRC (Area Under Precision-Recall Curve) - metric tốt hơn AUC cho imbalanced data
-- F-beta Score với beta khác nhau để nhấn mạnh Precision hoặc Recall
-
-### 9.4. Performance Improvements
+### 9.3. Performance Improvements
 
 **Parallel Processing**
 
@@ -1142,13 +1110,6 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 - Có thể parallelize cross-validation hoặc feature engineering
 - Sử dụng `multiprocessing` module của Python
-
-**Optimization**
-
-**Ý tưởng**: Tối ưu hóa các tính toán bằng NumPy
-
-- Sử dụng `np.einsum()` cho các phép tính phức tạp
-- Tận dụng vectorization và broadcasting tối đa
 
 ---
 
