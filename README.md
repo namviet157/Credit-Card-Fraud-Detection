@@ -10,11 +10,12 @@
 4. [Installation & Setup](#4-installation--setup)
 5. [Usage](#5-usage)
 6. [Results & Visualizations](#6-results--visualizations)
-7. [Project Structure](#7-project-structure)
-8. [Challenges & Solutions](#8-challenges--solutions)
-9. [Future Improvements](#9-future-improvements)
-10. [Contributors](#10-contributors)
-11. [License](#11-license)
+7. [Cross Validation](#7-cross-validation)
+8. [Project Structure](#8-project-structure)
+9. [Challenges & Solutions](#9-challenges--solutions)
+10. [Future Improvements](#10-future-improvements)
+11. [Contributors](#11-contributors)
+12. [License](#12-license)
 
 ---
 
@@ -527,15 +528,22 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
    - Tính các metrics cho cả hai threshold
    - Vẽ Confusion Matrix
    - Vẽ ROC Curve và tính AUC
-5. **Phân tích kết quả**:
+5. **Cross Validation**:
+   - Implement Stratified K-Fold Cross Validation
+   - 5-Fold CV trên toàn bộ dữ liệu (284,807 mẫu)
+   - Đánh giá độ ổn định của mô hình
+   - Visualize kết quả CV
+6. **Phân tích kết quả**:
    - So sánh metrics giữa threshold 0.5 và 0.2
    - Phân tích Confusion Matrix
    - Phân tích ROC Curve và AUC
+   - Phân tích kết quả Cross Validation
 
 **Kết quả đầu ra**:
 - **Threshold 0.5**: Precision=0.8333, Recall=0.4592, F1=0.5921
 - **Threshold 0.2**: Precision=0.8041, Recall=0.7959, F1=0.8000
 - AUC = 0.9748
+- **Cross Validation (Mean ± Std)**: Precision=0.8302±0.0292, Recall=0.8007±0.0325, F1=0.8148±0.0251, AUC=0.9758±0.0129
 
 ### 5.2. Lưu ý quan trọng
 
@@ -785,7 +793,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Câu hỏi**: Từ dự đoán của mô hình, chúng ta có thể thấy được gì về khả năng phát hiện gian lận?
 
-![](images/confusion_matrix.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/confusion_matrix.png?raw=true)
 
 **Biểu đồ**: Heatmap trực quan hóa số lượng TP, TN, FP, FN (với Threshold = 0.2)
 
@@ -898,7 +906,122 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ---
 
-## 7. Project Structure
+## 7. Cross Validation
+
+### 7.1. Giới thiệu Cross Validation
+
+**Cross Validation (Xác thực chéo)** là kỹ thuật đánh giá mô hình bằng cách chia dữ liệu thành nhiều phần (folds), huấn luyện và đánh giá mô hình nhiều lần trên các tập dữ liệu khác nhau.
+
+**Tại sao cần Cross Validation?**
+1. **Đánh giá độ ổn định:** Kết quả trên một lần train-test split có thể bị ảnh hưởng bởi may mắn. CV cho biết mô hình hoạt động ổn định như thế nào.
+2. **Giảm thiểu overfitting:** Đánh giá trên nhiều tập validation khác nhau giúp phát hiện overfitting sớm.
+3. **Tận dụng tối đa dữ liệu:** Mỗi điểm dữ liệu đều được sử dụng để train và validate.
+
+**Stratified K-Fold Cross Validation:**
+
+Với dữ liệu mất cân bằng như bài toán phát hiện gian lận, việc sử dụng **Stratified K-Fold** là bắt buộc. Kỹ thuật này đảm bảo mỗi fold có tỷ lệ phân bố lớp (class distribution) giống với tập dữ liệu gốc.
+
+$$\text{Tỷ lệ Fraud trong mỗi fold} \approx \text{Tỷ lệ Fraud trong tập gốc}$$
+
+### 7.2. Implementation
+
+**Ý tưởng triển khai Stratified K-Fold:**
+
+1. Tách các indices theo class (class 0 và class 1)
+2. Shuffle các indices (nếu cần)
+3. Chia đều các indices của mỗi class vào K folds
+4. Với mỗi fold, tạo tập validation từ fold đó và tập train từ các folds còn lại
+5. Huấn luyện và đánh giá mô hình trên mỗi fold
+
+**Cross Validation Function:**
+- Thực hiện K-Fold Stratified Cross Validation
+- Tính toán các metrics (Accuracy, Precision, Recall, F1, AUC) cho mỗi fold
+- Trả về kết quả để phân tích độ ổn định của mô hình
+
+### 7.3. Kết quả Cross Validation
+
+**Cấu hình thử nghiệm:**
+- Số folds: 5 (5-Fold Stratified Cross Validation)
+- Dữ liệu: Kết hợp toàn bộ train + test (284,807 mẫu)
+- Tỷ lệ Fraud: 492 mẫu (0.17%)
+- Threshold: 0.2
+- Model: Logistic Regression (lr=0.01, max_iter=1000)
+
+**Kết quả theo từng Fold:**
+
+| Fold | Accuracy | Precision | Recall | F1-Score | AUC |
+|------|----------|-----------|--------|----------|-----|
+| 1 | 0.9993 | 0.7843 | 0.8081 | 0.7960 | 0.9788 |
+| 2 | 0.9995 | 0.8750 | 0.8485 | 0.8615 | 0.9915 |
+| 3 | 0.9993 | 0.8409 | 0.7551 | 0.7957 | 0.9817 |
+| 4 | 0.9993 | 0.8261 | 0.7755 | 0.8000 | 0.9526 |
+| 5 | 0.9994 | 0.8247 | 0.8163 | 0.8205 | 0.9745 |
+
+**Tổng hợp kết quả (Mean ± Std):**
+
+| Metric | Mean ± Std | Đánh giá |
+|--------|------------|----------|
+| **Accuracy** | 0.9994 ± 0.0001 | Rất ổn định, nhưng không có ý nghĩa trong bài toán imbalanced |
+| **Precision** | 0.8302 ± 0.0292 | Tốt - Độ lệch chuẩn nhỏ |
+| **Recall** | 0.8007 ± 0.0325 | Tốt - Phát hiện ~80% gian lận một cách ổn định |
+| **F1-Score** | 0.8148 ± 0.0251 | Tốt - Cân bằng tốt và ổn định |
+| **AUC** | 0.9758 ± 0.0129 | Rất cao và ổn định |
+
+### 7.4. Visualization
+
+**Cross Validation Results:**
+
+![Cross Validation](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/cross_validation.png?raw=true)
+
+**Biểu đồ bao gồm:**
+- **Boxplot (bên trái):** Hiển thị phân phối của các metrics qua 5 folds
+  - Điểm kim cương (◆) đánh dấu giá trị trung bình
+  - Độ rộng của box thể hiện độ biến thiên
+- **Line chart (bên phải):** Hiển thị performance theo từng fold
+  - Các đường gần như song song cho thấy sự ổn định
+
+### 7.5. Phân tích kết quả
+
+**1. Độ ổn định của mô hình (Stability):**
+- Độ lệch chuẩn (std) của tất cả các chỉ số đều **< 0.05**
+- Điều này cho thấy mô hình có **độ ổn định cao**, không phụ thuộc vào cách chia dữ liệu
+
+**2. So sánh với kết quả Train-Test Split:**
+
+| Metric | Train-Test Split | Cross Validation (Mean) | Nhận xét |
+|--------|------------------|-------------------------|----------|
+| Precision | 0.8041 | 0.8302 | CV cao hơn một chút |
+| Recall | 0.7959 | 0.8007 | Tương đương |
+| F1-Score | 0.8000 | 0.8148 | CV cao hơn một chút |
+| AUC | 0.9748 | 0.9758 | Tương đương |
+
+**Kết luận:** Kết quả Cross Validation **tương đồng** với kết quả test ban đầu → **Mô hình không bị overfitting**
+
+**3. Ý nghĩa thực tiễn:**
+
+- **AUC cao và ổn định (0.9758 ± 0.0129):** 
+  - Mô hình có khả năng phân tách tốt giữa giao dịch bình thường và gian lận
+  - Độ tin cậy cao trong việc xếp hạng rủi ro
+
+- **Recall ổn định (0.8007 ± 0.0325):** 
+  - Khả năng phát hiện gian lận nhất quán qua các folds
+  - Không phụ thuộc vào cách chia dữ liệu
+
+- **F1-Score (0.8148 ± 0.0251):** 
+  - Cho thấy sự cân bằng tốt giữa Precision và Recall được duy trì ổn định
+  - Mô hình không thiên lệch về một chiều
+
+**4. Kết luận:**
+
+Cross Validation xác nhận rằng mô hình **Logistic Regression** với **threshold 0.2** là một lựa chọn **đáng tin cậy** cho bài toán phát hiện gian lận thẻ tín dụng:
+-  Hiệu suất ổn định qua các folds
+-  Không có dấu hiệu overfitting
+-  Recall cao (~80%) một cách nhất quán
+-  AUC rất cao (~97.6%)
+
+---
+
+## 8. Project Structure
 
 ```
 23127516/
@@ -920,7 +1043,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
     └── 03_modeling.ipynb              # Notebook huấn luyện và đánh giá mô hình
 ```
 
-### 7.1. Giải thích chức năng từng file/folder
+### 8.1. Giải thích chức năng từng file/folder
 
 #### `data/raw/`
 - **Chức năng**: Chứa dữ liệu gốc từ dataset Kaggle
@@ -974,7 +1097,8 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
   7. **Threshold optimization**: Thử nghiệm với threshold = 0.2
   8. Vẽ Confusion Matrix
   9. Vẽ ROC Curve và tính AUC
-  10. Phân tích và đánh giá kết quả
+  10. **Cross Validation**: Implement Stratified K-Fold và đánh giá độ ổn định
+  11. Phân tích và đánh giá kết quả
 
 #### `requirements.txt`
 - **Chức năng**: Liệt kê các thư viện Python cần thiết
@@ -991,11 +1115,11 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ---
 
-## 8. Challenges & Solutions
+## 9. Challenges & Solutions
 
 ### Khó khăn gặp phải khi dùng NumPy
 
-### 8.1. Challenge: Load CSV file không dùng Pandas
+### 9.1. Challenge: Load CSV file không dùng Pandas
 
 **Vấn đề**:
 - NumPy không có hàm đọc CSV trực tiếp như Pandas (`pd.read_csv()`)
@@ -1009,7 +1133,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Bài học**: NumPy có `np.char` module để xử lý string arrays, và `np.genfromtxt()` có thể đọc CSV nhưng cần xử lý thêm.
 
-### 8.2. Challenge: Vectorization thay vì for loops
+### 9.2. Challenge: Vectorization thay vì for loops
 
 **Vấn đề**:
 - Ban đầu có thể muốn dùng for loops để xử lý từng feature
@@ -1030,7 +1154,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Bài học**: Luôn nghĩ về cách vectorize operations, sử dụng broadcasting và fancy indexing để tăng tốc độ tính toán.
 
-### 8.3. Challenge: Numerical stability trong sigmoid
+### 9.3. Challenge: Numerical stability trong sigmoid
 
 **Vấn đề**:
 - `exp(-z)` có thể overflow khi z rất âm (z << 0)
@@ -1045,7 +1169,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Bài học**: Luôn chú ý đến numerical stability, đặc biệt với các hàm exponential.
 
-### 8.4. Challenge: Tính toán thống kê phức tạp (Skewness, Kurtosis)
+### 9.4. Challenge: Tính toán thống kê phức tạp (Skewness, Kurtosis)
 
 **Vấn đề**:
 - NumPy không có hàm `skew()` và `kurtosis()` sẵn
@@ -1060,7 +1184,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Bài học**: Hiểu rõ công thức toán học giúp implement các hàm không có sẵn.
 
-### 8.5. Challenge: Xử lý division by zero
+### 9.5. Challenge: Xử lý division by zero
 
 **Vấn đề**:
 - Khi tính Z-score, nếu std = 0 (feature không đổi), sẽ gây lỗi division by zero
@@ -1076,9 +1200,9 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ---
 
-## 9. Future Improvements
+## 10. Future Improvements
 
-### 9.1. Xử lý Class Imbalance
+### 10.1. Xử lý Class Imbalance
 
 **SMOTE (Synthetic Minority Oversampling Technique)**
 
@@ -1094,7 +1218,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - Random undersampling hoặc Tomek Links để loại bỏ các mẫu không quan trọng của class Normal
 - Cần cẩn thận để không làm mất thông tin quan trọng
 
-### 9.2. Model Improvements
+### 10.2. Model Improvements
 
 **Ensemble Methods**
 
@@ -1103,7 +1227,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - Có thể kết hợp Logistic Regression với các mô hình khác (nếu được phép sử dụng thư viện)
 - Voting hoặc Stacking để tận dụng điểm mạnh của từng mô hình
 
-### 9.3. Performance Improvements
+### 10.3. Performance Improvements
 
 **Parallel Processing**
 
@@ -1114,9 +1238,9 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ---
 
-## 10. Contributors
+## 11. Contributors
 
-### 10.1. Thông tin tác giả
+### 11.1. Thông tin tác giả
 
 - **Tên**: Bùi Nam Việt
 - **MSSV**: 23127516
@@ -1124,7 +1248,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 - **Khoa**: Khoa Công nghệ Thông tin
 - **Bộ môn**: Nhập môn Khoa học Dữ liệu
 
-### 10.2. Acknowledgments
+### 11.2. Acknowledgments
 
 - **Dataset**: Cảm ơn ULB Machine Learning Group và Kaggle đã cung cấp dataset
 - **Giảng viên**: Cảm ơn giảng viên môn Programming for Data Science đã hướng dẫn
@@ -1139,7 +1263,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 ---
 
-## 11. License
+## 12. License
 
 This project is licensed under the **Database Contents License (DbCL) v1.0**
 
