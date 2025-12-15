@@ -611,7 +611,8 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Câu hỏi**: Dữ liệu có mất cân bằng như thế nào và điều này ảnh hưởng gì đến việc phát hiện gian lận?
 
-![](images/class_distribution.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/class_distribution.png?raw=true)
+
 
 **Biểu đồ**: Bar chart và Pie chart hiển thị số lượng và tỷ lệ phần trăm của mỗi class
 
@@ -627,7 +628,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Câu hỏi**: Có sự khác biệt đáng chú ý nào về tỷ lệ gian lận giữa các giờ trong ngày không và nguyên nhân có thể là gì?
 
-![](images/time_feature.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/time_feature.png?raw=true)
 
 **Biểu đồ**: 
 - Histogram: Phân phối giao dịch theo giờ
@@ -656,7 +657,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Câu hỏi**: Giao dịch gian lận có xu hướng có giá trị cao hơn hay thấp hơn giao dịch bình thường?
 
-![](images/amount.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/amount.png?raw=true)
 
 **Biểu đồ**: 
 - Histogram: Phân phối Amount (lệch phải nghiêm trọng)
@@ -684,7 +685,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Biểu đồ**: Histograms cho V1-V9 hiển thị phân phối của các PCA features
 
-![](images/PCA_features.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/PCA_features.png?raw=true)
 
 **Giải thích**:
 - Tất cả các biến này đều có giá trị trung bình (Mean) xấp xỉ 0 (đặc tính của dữ liệu đã qua PCA)
@@ -695,7 +696,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Biểu đồ**: Heatmap tương quan giữa các features quan trọng (Time, Amount và 10 biến V đầu tiên)
 
-![](images/feature_corr.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/feature_corr.png?raw=true)
 
 **Giải thích**:
 - **Tính trực giao của PCA**: Các biến V1, V2,... V28 hầu như không có tương quan với nhau (hệ số tương quan gần bằng 0). Đây là tính chất của PCA giúp loại bỏ đa cộng tuyến.
@@ -705,7 +706,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Câu hỏi**: Làm thế nào để phát hiện các bất thường cục bộ mà không chỉ dựa vào giá trị tuyệt đối?
 
-![](images/rolling_statistics.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/rolling_statistics.png?raw=true)
 
 **Biểu đồ**: 
 - Line chart: Amount với Rolling Mean và Rolling Std (cửa sổ trượt 100 giao dịch)
@@ -749,9 +750,9 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Biểu đồ**: Histograms so sánh Original vs Min-Max vs Z-score vs Log-transformed cho feature Amount
 
-![Min-Max Normalization Comparison](images/min_max_normalization.png)
-![Z-score Standadization Comparison](images/z_score.png)
-![Log Transformation Comparison](images/log_transformation.png)
+![Min-Max Normalization Comparison](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/min_max_normalization.png?raw=true)
+![Z-score Standadization Comparison](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/z_score.png?raw=true)
+![Log Transformation Comparison](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/log_transformation.png?raw=true)
 
 **Giải thích**:
 - **Original**: Phân phối lệch phải nghiêm trọng (Skewness = 16.98)
@@ -770,7 +771,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Biểu đồ**: Line chart hiển thị Loss giảm đều qua các iterations
 
-![](images/loss_history.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/loss_history.png?raw=true)
 
 **Giải thích**:
 - **Sự hội tụ**: Đường Loss giảm đều và mượt mà, tiệm cận về giá trị ~0.1095 sau 1000 vòng lặp
@@ -805,7 +806,7 @@ pip install numpy>=1.21.0 matplotlib>=3.5.0 seaborn>=0.11.0 jupyter
 
 **Biểu đồ**: Line chart hiển thị ROC curve với AUC = 0.9748, so sánh với Random Classifier (đường chéo)
 
-![](images/roc_curve.png)
+![](https://github.com/namviet157/Credit-Card-Fraud-Detection/blob/main/images/roc_curve.png?raw=true)
 
 **Giải thích**:
 - **ROC Curve**: Đường cong nằm sát góc trên bên trái, cho thấy khả năng phân tách giữa hai lớp (Fraud và Normal) là rất tốt
